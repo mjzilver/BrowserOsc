@@ -1,10 +1,8 @@
-let started = false;
-let paused = false;
 let pauseButton;
 let fft;
 
-let windowWidth = window.innerWidth * 0.95;
-let windowHeight = window.innerHeight * 0.95;
+let windowWidth = window.innerWidth;
+let windowHeight = window.innerHeight;
 
 let oscillators = [];
 let defaultAmp = 0.5;
@@ -203,6 +201,16 @@ function setup() {
         let key = event.key;
         keyReleased(key);
     });
+
+    window.addEventListener('mousedown', (event) => {
+        mousePressed(event);
+    });
+
+    // to start off first oscillator is a sine
+    oscillators[0].setType(oscillatorTypes.SINE);
+    // set first selectbox too
+    let oscTypeSelect = document.getElementsByTagName('select')[0];
+    oscTypeSelect.value = oscillatorTypes.SINE;
 }
 
 function draw() {
@@ -211,13 +219,6 @@ function draw() {
     drawWaveform();
     drawKeyboard();
     drawEnvelope();
-
-    if (paused) {
-        fill(255, 0, 0);
-        textSize(32);
-        textAlign(CENTER, CENTER);
-        text('Paused', windowWidth / 2, windowHeight / 2);
-    }
 }
 
 function drawGrid(bounds, spacing) {
@@ -321,6 +322,8 @@ function drawEnvelope() {
     endShape();
 }
 
+let keyBounds = [];
+
 function drawKeyboard() {
     let keyWidth = 80;
     let keyHeight = 200;
@@ -329,6 +332,7 @@ function drawKeyboard() {
     let keyX = 10;
     // draw black keys later
     let blackKeys = [];
+    keyBounds = [];
 
     // Draw white keys and record black key positions
     for (let i = 0; i < keys.length; i++) {
@@ -336,6 +340,7 @@ function drawKeyboard() {
 
         if (key.isWhite) {
             drawWhiteKey(keyX, keyY, keyWidth, keyHeight, key);
+            keyBounds.push({ key: key, x: keyX, y: keyY, w: keyWidth, h: keyHeight });
             keyX += keyWidth;
         } else {
             blackKeys.push({ key: key, x: keyX });
@@ -345,10 +350,15 @@ function drawKeyboard() {
     // Draw black keys on top
     for (let i = 0; i < blackKeys.length; i++) {
         let blackKeyX = blackKeys[i].x;
-        drawBlackKey(blackKeyX - keyWidth / 4, keyY, keyWidth / 2, keyHeight * 0.75, blackKeys[i].key);
+        const key = blackKeys[i].key;
+        const keyX = blackKeyX - keyWidth / 4;
+        const keyW = keyWidth / 2;
+        const keyH = keyHeight * 0.75;
+
+        drawBlackKey(keyX, keyY, keyW, keyH, key);
+        keyBounds.push({ key: key, x: keyX, y: keyY, w: keyW, h: keyH });
     }
 }
-
 
 function drawBlackKey(x, y, w, h, key) {
     fill(key.held ? 200 : 0);
@@ -372,9 +382,33 @@ function drawWhiteKey(x, y, w, h, key) {
     text(key.key, x + w / 2, y + h / 2 + 20);
 }
 
-function mousePressed() {
-    if (!started) {
-        started = true;
+function mousePressed(event) {
+    let x = event.clientX;
+    let y = event.clientY;
+
+    let keysHit = [];
+
+    for (key of keyBounds) {
+        if (x >= key.x && x <= key.x + key.w && y >= key.y && y <= key.y + key.h) {
+            keysHit.push(key);
+        }
+    }
+
+    if (keysHit.length !== 0) {
+        // if multiple keys are hit, play the black key
+        if (keysHit.length > 1) {
+            let blackKey = keysHit.find(key => !key.key.isWhite);
+            keyPressed(blackKey.key.key);
+        } else {
+            keyPressed(keysHit[0].key.key);
+        }
+    }
+}
+
+function mouseReleased(event) {
+    // release all keys
+    for (let key of keyMap.keys()) {
+        keyReleased(key);
     }
 }
 
@@ -404,22 +438,5 @@ function keyReleased(key) {
             let osc = oscillators[i];
             osc.triggerRelease();
         }
-    }
-}
-
-function togglePause() {
-    if (started) {
-        if (paused) {
-            for (let i = 0; i < oscillators.length; i++) {
-                oscillators[i].togglePause();
-            }
-            pauseButton.html('Pause');
-        } else {
-            for (let i = 0; i < oscillators.length; i++) {
-                oscillators[i].togglePause();
-            }
-            pauseButton.html('Resume');
-        }
-        paused = !paused;
     }
 }
