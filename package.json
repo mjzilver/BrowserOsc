@@ -6,7 +6,8 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --no-clear"
+    "start": "sirv public --no-clear",
+    "lint": "eslint --fix"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.0",
@@ -16,7 +17,10 @@
     "rollup-plugin-css-only": "^4.3.0",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-svelte": "^7.1.2",
-    "svelte": "^3.55.0"
+    "svelte": "^3.55.0",
+    "@eslint/js": "^9.8.0",
+    "eslint": "^9.8.0",
+    "globals": "^15.9.0"
   },
   "dependencies": {
     "sirv-cli": "^2.0.0"

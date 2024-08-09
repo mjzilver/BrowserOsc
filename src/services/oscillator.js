@@ -1,55 +1,87 @@
-import { audioContext } from './audioContext.js';
-
-const envelope = {
-    attack: 0.001,
-    decay: 0.5,
-    sustain: 0.1,
-    release: 0.8,
-};
+import { audioContextPromise } from "./audioContext";
 
 export class Oscillator {
-    constructor(type) {
-        this.osc = audioContext.createOscillator();
-        this.gainNode = audioContext.createGain();
-        this.gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-        this.osc.connect(this.gainNode);
-        this.gainNode.connect(audioContext.destination);
-        this.setType(type);
-    }
+	audioContext;
+	osc;
+	gainNode;
 
-    setFrequency(freq) {
-        this.osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-    }
+	envelope = {
+		attack: 0.001,
+		decay: 0.5,
+		sustain: 0.1,
+		release: 0.8,
+	};
 
-    setType(type) {
-        this.osc.type = type;
-        if (type === 'disable') {
-            this.osc.disconnect();
-        } else {
-            this.osc.connect(this.gainNode);
-        }
-    }
+	constructor(type) {
+		this.init(type);
+	}
 
-    start() {
-        this.osc.start();
-    }
+	async init(type) {
+		try {
+			this.audioContext = await audioContextPromise;
+			console.log("audioContext", this.audioContext);
 
-    stop() {
-        this.osc.stop();
-    }
+			this.osc = new OscillatorNode(this.audioContext);
+			this.gainNode = new GainNode(this.audioContext);
+			this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+			this.osc.connect(this.gainNode);
+			this.gainNode.connect(this.audioContext.destination);
+			this.setType(type);
+		} catch (error) {
+			console.error("Error initializing audio context:", error);
+		}
+	}
 
-    triggerAttack() {
-        const now = audioContext.currentTime;
-        this.gainNode.gain.cancelScheduledValues(now);
-        this.gainNode.gain.setValueAtTime(0, now);
-        this.gainNode.gain.linearRampToValueAtTime(1, now + envelope.attack);
-        this.gainNode.gain.linearRampToValueAtTime(envelope.sustain, now + envelope.attack + envelope.decay);
-    }
+	setFrequency(freq) {
+		if (this.osc) {
+			this.osc.frequency.setValueAtTime(freq, this.audioContext.currentTime);
+		}
+	}
 
-    triggerRelease() {
-        const now = audioContext.currentTime;
-        this.gainNode.gain.cancelScheduledValues(now);
-        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(0, now + envelope.release);
-    }
+	setType(type) {
+		if (this.osc) {
+			this.osc.type = type;
+			if (type === "disable") {
+				this.osc.disconnect();
+			} else {
+				this.osc.connect(this.gainNode);
+			}
+		}
+	}
+
+	async start() {
+		await this.init(); 
+		if (this.osc) {
+			this.osc.start();
+		}
+	}
+
+	async stop() {
+		await this.init(); 
+		if (this.osc) {
+			this.osc.stop();
+		}
+	}
+
+	triggerAttack() {
+		if (this.gainNode) {
+			const now = this.audioContext.currentTime;
+			this.gainNode.gain.cancelScheduledValues(now);
+			this.gainNode.gain.setValueAtTime(0, now);
+			this.gainNode.gain.linearRampToValueAtTime(1, now + this.envelope.attack);
+			this.gainNode.gain.linearRampToValueAtTime(
+				this.envelope.sustain,
+				now + this.envelope.attack + this.envelope.decay
+			);
+		}
+	}
+
+	triggerRelease() {
+		if (this.gainNode) {
+			const now = this.audioContext.currentTime;
+			this.gainNode.gain.cancelScheduledValues(now);
+			this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+			this.gainNode.gain.linearRampToValueAtTime(0, now + this.envelope.release);
+		}
+	}
 }

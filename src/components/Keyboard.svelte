@@ -1,6 +1,6 @@
 <script context="module">
   import { onMount } from "svelte";
-  import { audioContext } from "../services/audioContext.js";
+  import { audioContextPromise } from "../services/audioContext.js";
   import { Oscillator } from "../services/oscillator.js";
 
   let canvas, ctx;

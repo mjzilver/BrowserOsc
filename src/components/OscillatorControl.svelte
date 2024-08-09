@@ -11,8 +11,8 @@
 <div class="controls">
     {#each oscTypes as type, i}
         <div>
-            <label>Oscillator {i + 1}</label>
-            <select bind:value={oscTypes[i]} on:change={(e) => onOscillatorChange(i, e)}>
+            <label for={`oscillator-${i + 1}`}>Oscillator {i + 1}</label>
+            <select id={`oscillator-${i + 1}`} bind:value={oscTypes[i]} on:change={(e) => onOscillatorChange(i, e)}>
                 <option value="sine">Sine</option>
                 <option value="sawtooth">Sawtooth</option>
                 <option value="triangle">Triangle</option>
